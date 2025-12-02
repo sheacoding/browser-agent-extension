@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Agents CC Browser Agent",
+  "version": "1.0.0",
+  "description": "AI Agent browser control extension - MCP + WebSocket",
+
+  "permissions": [
+    "sidePanel",
+    "debugger",
+    "tabs",
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
+  ],
+
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+
+  "side_panel": {
+    "default_path": "src/sidepanel/index.html"
+  },
+
+  "action": {
+    "default_title": "Open Browser Agent"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/index.ts"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "icons": {
+    "16": "public/icons/icon16.png",
+    "48": "public/icons/icon48.png",
+    "128": "public/icons/icon128.png"
+  }
+}

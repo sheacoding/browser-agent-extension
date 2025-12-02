@@ -1,0 +1,23 @@
+{
+  "name": "agents-cc-browser-extension",
+  "version": "1.0.0",
+  "description": "AI Agent 浏览器控制扩展 - 通过 HTTP API 接收指令，使用 CDP 控制浏览器",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.28",
+    "@types/chrome": "^0.0.287",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.1"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.50",
+    "@ai-sdk/google": "^2.0.44",
+    "@ai-sdk/openai": "^2.0.75",
+    "ai": "^5.0.104"
+  }
+}

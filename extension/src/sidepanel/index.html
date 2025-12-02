@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browser Agent</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: row;
+    }
+
+    /* 主内容区 */
+    .main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* 右侧标签栏 */
+    .sidebar-tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px 6px;
+      background: rgba(0, 0, 0, 0.3);
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* 顶部工具栏 */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .indicator-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ef4444;
+      transition: all 0.3s;
+    }
+
+    .indicator-dot.connected {
+      background: #22c55e;
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+    }
+
+    .indicator-dot.connecting {
+      background: #f59e0b;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .status-label {
+      font-size: 12px;
+      color: #64748b;
+      margin-right: 4px;
+    }
+
+    .status-text {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .btn-reconnect {
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 4px;
+      color: #94a3b8;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-left: 8px;
+    }
+
+    .btn-reconnect:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .btn-reconnect:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* 标签图标 */
+    .tab-icon {
+      background: transparent;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tab-icon:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+    }
+
+    .tab-icon.active {
+      background: rgba(0, 212, 255, 0.2);
+      color: #00d4ff;
+    }
+
+    .tab-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* 内容区域 */
+    .content {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel {
+      display: none;
+      flex: 1;
+      overflow: hidden;
+      padding: 16px;
+    }
+
+    .panel.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Task Log 面板 */
+    .log-header {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+    }
+
+    .btn-clear {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #94a3b8;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-clear:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .log-container {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 12px;
+      flex: 1;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+      font-size: 12px;
+    }
+
+    .log-entry {
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      gap: 8px;
+    }
+
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+
+    .log-time {
+      color: #64748b;
+      flex-shrink: 0;
+    }
+
+    .log-action {
+      color: #00d4ff;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    .log-detail {
+      color: #94a3b8;
+      word-break: break-all;
+    }
+
+    .log-success {
+      color: #22c55e;
+    }
+
+    .log-error {
+      color: #ef4444;
+    }
+
+    .empty-log {
+      color: #64748b;
+      text-align: center;
+      padding: 40px 0;
+    }
+
+    /* Settings 面板 */
+    .settings-section {
+      margin-bottom: 20px;
+    }
+
+    .settings-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+
+    .form-input,
+    .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .form-input:focus,
+    .form-select:focus {
+      outline: none;
+      border-color: #00d4ff;
+      box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+    }
+
+    .form-input::placeholder {
+      color: #64748b;
+    }
+
+    .form-select {
+      cursor: pointer;
+    }
+
+    .form-select option {
+      background: #1a1a2e;
+      color: #fff;
+    }
+
+    .form-hint {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    .btn-save {
+      width: 100%;
+      padding: 10px 16px;
+      background: linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%);
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-save:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .btn-save:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .save-status {
+      text-align: center;
+      font-size: 12px;
+      margin-top: 10px;
+      min-height: 18px;
+    }
+
+    .save-status.success {
+      color: #22c55e;
+    }
+
+    .save-status.error {
+      color: #ef4444;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 主内容区 -->
+  <div class="main-area">
+    <!-- 顶部工具栏 -->
+    <div class="toolbar">
+      <div class="status-indicator">
+        <span class="status-label">MCP Server</span>
+        <div class="indicator-dot" id="statusDot"></div>
+        <span class="status-text" id="statusText">Disconnected</span>
+        <button class="btn-reconnect" id="btnReconnect">Reconnect</button>
+      </div>
+    </div>
+
+    <!-- 内容区域 -->
+    <div class="content">
+      <!-- Task Log 面板 -->
+      <div class="panel active" id="panelLogs">
+        <div class="log-header">
+          <button class="btn-clear" id="btnClear">Clear</button>
+        </div>
+        <div class="log-container" id="logContainer">
+          <div class="empty-log">Waiting for tasks...</div>
+        </div>
+      </div>
+
+      <!-- Settings 面板 -->
+      <div class="panel" id="panelSettings">
+        <div class="settings-section">
+          <div class="settings-title">AI Model Configuration</div>
+
+          <div class="form-group">
+            <label class="form-label">Provider</label>
+            <select class="form-select" id="provider">
+              <option value="">Select provider...</option>
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Anthropic (Claude)</option>
+              <option value="google">Google (Gemini)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">API Key</label>
+            <input type="password" class="form-input" id="apiKey" placeholder="Enter your API key">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Model</label>
+            <input type="text" class="form-input" id="model" placeholder="Leave empty for default">
+            <div class="form-hint" id="modelHint">Default model will be used</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Base URL (Optional)</label>
+            <input type="text" class="form-input" id="baseURL" placeholder="Custom API endpoint">
+            <div class="form-hint">For proxy or custom API endpoints</div>
+          </div>
+
+          <button class="btn-save" id="btnSave">Save Configuration</button>
+          <div class="save-status" id="saveStatus"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 右侧标签栏 -->
+  <div class="sidebar-tabs">
+    <button class="tab-icon active" data-panel="logs" title="Task Log">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
+      </svg>
+    </button>
+    <button class="tab-icon" data-panel="settings" title="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path
+          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+        </path>
+      </svg>
+    </button>
+  </div>
+
+  <script type="module" src="./sidepanel.ts"></script>
+</body>
+
+</html>
