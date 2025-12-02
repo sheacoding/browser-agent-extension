@@ -1,15 +1,11 @@
 /**
- * Side Panel - WebSocket Client + UI + Settings
- * 连接 MCP Server，转发请求到 Service Worker，管理 AI 配置
+ * Side Panel - WebSocket Client + UI
+ * 连接 MCP Server，转发请求到 Service Worker
  */
-
-import type { AIConfig, AIProvider } from '@/types/ai';
-import { DEFAULT_MODELS } from '@/types/ai';
 
 const WS_URL = 'ws://127.0.0.1:3026';
 const RECONNECT_DELAY = 3000;
 const MAX_RETRIES = 1;
-const STORAGE_KEY = 'ai_config';
 
 interface WSRequest {
   type: 'REQUEST';
@@ -40,15 +36,6 @@ const btnClear = document.getElementById('btnClear') as HTMLButtonElement;
 // DOM 元素 - 标签切换
 const tabs = document.querySelectorAll('.tab-icon') as NodeListOf<HTMLButtonElement>;
 const panels = document.querySelectorAll('.panel') as NodeListOf<HTMLDivElement>;
-
-// DOM 元素 - Settings 表单
-const providerSelect = document.getElementById('provider') as HTMLSelectElement;
-const apiKeyInput = document.getElementById('apiKey') as HTMLInputElement;
-const modelInput = document.getElementById('model') as HTMLInputElement;
-const modelHint = document.getElementById('modelHint') as HTMLDivElement;
-const baseURLInput = document.getElementById('baseURL') as HTMLInputElement;
-const btnSave = document.getElementById('btnSave') as HTMLButtonElement;
-const saveStatus = document.getElementById('saveStatus') as HTMLDivElement;
 
 let ws: WebSocket | null = null;
 let reconnectTimer: number | null = null;
@@ -233,87 +220,6 @@ function clearLogs(): void {
   logContainer.innerHTML = '<div class="empty-log">Waiting for tasks...</div>';
 }
 
-/**
- * 更新模型提示
- */
-function updateModelHint(): void {
-  const provider = providerSelect.value as AIProvider;
-  if (provider && DEFAULT_MODELS[provider]) {
-    modelHint.textContent = `Default: ${DEFAULT_MODELS[provider]}`;
-  } else {
-    modelHint.textContent = 'Select a provider first';
-  }
-}
-
-/**
- * 加载已保存的配置
- */
-async function loadConfig(): Promise<void> {
-  try {
-    const result = await chrome.storage.local.get(STORAGE_KEY);
-    const config = result[STORAGE_KEY] as AIConfig | undefined;
-
-    if (config) {
-      providerSelect.value = config.provider || '';
-      apiKeyInput.value = config.apiKey || '';
-      modelInput.value = config.model || '';
-      baseURLInput.value = config.baseURL || '';
-      updateModelHint();
-    }
-  } catch (error) {
-    console.error('[SidePanel] Failed to load config:', error);
-  }
-}
-
-/**
- * 保存配置
- */
-async function saveConfig(): Promise<void> {
-  const provider = providerSelect.value as AIProvider;
-  const apiKey = apiKeyInput.value.trim();
-
-  if (!provider) {
-    showSaveStatus('Please select a provider', 'error');
-    return;
-  }
-
-  if (!apiKey) {
-    showSaveStatus('Please enter an API key', 'error');
-    return;
-  }
-
-  const config: AIConfig = {
-    provider,
-    apiKey,
-    model: modelInput.value.trim() || undefined,
-    baseURL: baseURLInput.value.trim() || undefined,
-  };
-
-  try {
-    btnSave.disabled = true;
-    await chrome.storage.local.set({ [STORAGE_KEY]: config });
-    showSaveStatus('Configuration saved!', 'success');
-  } catch (error) {
-    console.error('[SidePanel] Failed to save config:', error);
-    showSaveStatus('Failed to save', 'error');
-  } finally {
-    btnSave.disabled = false;
-  }
-}
-
-/**
- * 显示保存状态
- */
-function showSaveStatus(message: string, type: 'success' | 'error'): void {
-  saveStatus.textContent = message;
-  saveStatus.className = `save-status ${type}`;
-
-  setTimeout(() => {
-    saveStatus.textContent = '';
-    saveStatus.className = 'save-status';
-  }, 3000);
-}
-
 // 事件监听 - 标签切换
 tabs.forEach(tab => {
   tab.addEventListener('click', () => {
@@ -328,12 +234,7 @@ tabs.forEach(tab => {
 btnClear.addEventListener('click', clearLogs);
 btnReconnect.addEventListener('click', manualReconnect);
 
-// 事件监听 - Settings
-providerSelect.addEventListener('change', updateModelHint);
-btnSave.addEventListener('click', saveConfig);
-
 // 初始化
-loadConfig();
 connect();
 
 console.log('[SidePanel] Side Panel loaded');

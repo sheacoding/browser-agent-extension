@@ -1,11 +1,9 @@
 /**
  * Service Worker
- * 接收 Side Panel 消息，执行 CDP 操作和 AI 调用
+ * 接收 Side Panel 消息，执行 CDP 操作
  */
 
 import { browserContext } from '@/cdp';
-import { aiService, saveAIConfig, getAIConfig, clearAIConfig } from '@/ai';
-import type { AIConfig, ChatMessage } from '@/types/ai';
 
 interface MCPRequest {
   type: 'MCP_REQUEST';
@@ -418,88 +416,6 @@ async function executeAction(action: string, params: Record<string, unknown>): P
 
       await page.rightClick(selector);
       return { rightClicked: true, selector };
-    }
-
-    // ========== AI 相关操作 ==========
-
-    case 'ai_config': {
-      const config = params as Partial<AIConfig>;
-      if (!config.provider || !config.apiKey) {
-        throw new Error('provider and apiKey are required');
-      }
-      const fullConfig: AIConfig = {
-        provider: config.provider,
-        apiKey: config.apiKey,
-        model: config.model,
-        baseURL: config.baseURL,
-      };
-      await saveAIConfig(fullConfig);
-      aiService.setConfig(fullConfig);
-      return { configured: true, provider: config.provider };
-    }
-
-    case 'ai_get_config': {
-      const config = await getAIConfig();
-      if (!config) {
-        return { configured: false };
-      }
-      // 不返回完整的 apiKey，只返回部分信息
-      return {
-        configured: true,
-        provider: config.provider,
-        model: config.model,
-        hasApiKey: !!config.apiKey,
-      };
-    }
-
-    case 'ai_clear_config': {
-      await clearAIConfig();
-      return { cleared: true };
-    }
-
-    case 'ai_chat': {
-      const prompt = params.prompt as string;
-      const systemPrompt = params.systemPrompt as string | undefined;
-      if (!prompt) throw new Error('prompt is required');
-
-      // 确保服务已初始化
-      if (!aiService.isReady()) {
-        await aiService.initialize();
-      }
-      if (!aiService.isReady()) {
-        throw new Error('AI service not configured. Use ai_config first.');
-      }
-
-      const response = await aiService.chat(prompt, systemPrompt);
-      return { response };
-    }
-
-    case 'ai_generate': {
-      const messages = params.messages as ChatMessage[];
-      if (!messages || !Array.isArray(messages)) {
-        throw new Error('messages array is required');
-      }
-
-      // 确保服务已初始化
-      if (!aiService.isReady()) {
-        await aiService.initialize();
-      }
-      if (!aiService.isReady()) {
-        throw new Error('AI service not configured. Use ai_config first.');
-      }
-
-      const result = await aiService.generateText({
-        messages,
-        temperature: params.temperature as number | undefined,
-        maxTokens: params.maxTokens as number | undefined,
-      });
-
-      return {
-        content: result.content,
-        model: result.model,
-        usage: result.usage,
-        finishReason: result.finishReason,
-      };
     }
 
     default:

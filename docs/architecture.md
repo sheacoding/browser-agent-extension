@@ -14,7 +14,7 @@
                                       │ stdio (JSON-RPC 2.0)
                                       ▼
 ┌────────────────────────────────────────────────────────────────────────────┐
-│                           Go MCP Server                                     │
+│                        TypeScript MCP Server                                │
 │  ┌──────────────────────────────────────────────────────────────────────┐  │
 │  │  MCP Tools: browser_navigate, browser_click, browser_type, ...       │  │
 │  └──────────────────────────────────────────────────────────────────────┘  │
@@ -53,7 +53,7 @@
 
 ## 核心组件
 
-### 1. Go MCP Server
+### 1. TypeScript MCP Server
 
 **职责：**
 - 实现 MCP 协议，提供标准化的工具接口
@@ -168,7 +168,7 @@
 | 扩展框架 | Chrome Extension Manifest V3 | 最新标准 |
 | 开发语言 | TypeScript | 类型安全 |
 | 构建工具 | Vite + CRXJS | 快速热重载 |
-| MCP Server | Go + mcp-go | MCP 协议实现 |
+| MCP Server | TypeScript + @modelcontextprotocol/sdk | MCP 协议实现 |
 | 扩展通信 | WebSocket | Side Panel 连接 |
 | 浏览器控制 | chrome.debugger (CDP) | 核心自动化能力 |
 | 包管理 | pnpm | 高效依赖管理 |
@@ -202,11 +202,11 @@ browser-agent-extension/
 │   ├── package.json
 │   └── vite.config.ts
 │
-└── mcp-server/                   # Go MCP Server
-    ├── main.go                   # 入口
-    ├── tools.go                  # MCP 工具定义
-    ├── websocket.go              # WebSocket 服务
-    └── go.mod
+└── mcp-server/                   # TypeScript MCP Server
+    ├── src/
+    │   └── index.ts              # 入口 + MCP 工具定义 + WebSocket
+    ├── package.json
+    └── tsconfig.json
 ```
 
 ---
@@ -222,24 +222,16 @@ browser-agent-extension/
 - 工具定义模式 (ToolCollection, ToolResult)
 - 截图和鼠标/键盘操作的实现方式
 
-### 2. anthropics/mcp-go
+### 2. modelcontextprotocol/typescript-sdk
 
-**项目地址：** https://github.com/anthropics/mcp-go
+**项目地址：** https://github.com/modelcontextprotocol/typescript-sdk
 
 **参考内容：**
-- Go 语言 MCP Server 实现
+- TypeScript MCP Server 实现
 - MCP 协议的标准工具定义方式
 - stdio 通信的处理模式
 
-### 3. anthropics/mcp-typescript
-
-**项目地址：** https://github.com/anthropics/mcp-typescript
-
-**参考内容：**
-- TypeScript MCP 实现参考
-- 类型定义规范
-
-### 4. anthropics/stagehand
+### 3. browserbase/stagehand
 
 **项目地址：** https://github.com/browserbase/stagehand
 
@@ -248,7 +240,7 @@ browser-agent-extension/
 - 页面操作的封装模式 (Page, BrowserContext)
 - CDP 命令的组织方式
 
-### 5. anthropics/browser-tools-mcp
+### 4. anthropics/browser-tools-mcp
 
 **项目地址：** https://github.com/anthropics/anthropic-quickstarts/tree/main/browser-tools-mcp
 

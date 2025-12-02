@@ -8,9 +8,7 @@
     "sidePanel",
     "debugger",
     "tabs",
-    "activeTab",
-    "scripting",
-    "storage"
+    "activeTab"
   ],
 
   "host_permissions": [
